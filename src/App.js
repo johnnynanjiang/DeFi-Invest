@@ -4,6 +4,9 @@ import Navbar from "./components/Navbar";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import About from "./pages/About";
 import Home from "./pages/Home";
+
+import { Investment } from "./pages/Investment";
+
 function App() {
   return (
     <Router>
@@ -16,6 +19,9 @@ function App() {
             </Route>
             <Route path="/users">
               <Users />
+            </Route>
+            <Route path="/investment">
+              <Investment />
             </Route>
             <Route path="/">
               <Home />
