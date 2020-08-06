@@ -1,14 +1,8 @@
 import React from "react";
 import { Grid, Typography } from "@material-ui/core";
 
-const Investment = () => {
-  return (
-    <Grid container>
-      <Typography variant="h1" component="h2">
-      Investment
-      </Typography>
-    </Grid>
-  );
+const investmentParameters = {
+    "minimumAmountPerOption": 100.00
 };
 
 const investmentOptions = [
@@ -183,10 +177,9 @@ const investmentOptions = [
 ];
 
 class InvestmentTool {
-  constructor() {}
   
   sortByRisk(investmentOptions) {
-    return investmentOptions.sort((option1, option2) => {
+    return investmentOptions.slice(0).sort((option1, option2) => {
         if (option1.risk < option2.risk) return -1;
         if (option1.risk > option2.risk) return 1;
         if (option1.return > option2.return) return -1;
@@ -194,21 +187,81 @@ class InvestmentTool {
     });
   }
 
-  distribute(amountToInvest, investmentOptions, risk) {
-    // let distributedInvestmentOptions = distributeAmount(amountToInvest, investmentOptions, risk)
-    // return distributedInvestmentOptions
+  getInvestmentOptionsBelowRisk(investmentOptions, risk) {
+    return investmentOptions.filter((option) => {
+        return (option.risk <= risk)
+    })
   }
 
-  adjustDistribution(optionId, amountToInvest) {
+  distribute(amountToInvest, investmentOptions, investmentParameters, risk) {
+    let investmentOptionsBelowRisk = this.getInvestmentOptionsBelowRisk(investmentOptions, risk);
+    let distributedInvestmentOptions = investmentOptionsBelowRisk;
+    let minimumAmountPerOption = investmentParameters.minimumAmountPerOption;
+
+    let numberOfCandidateOptions = investmentOptionsBelowRisk.length;
+    if (numberOfCandidateOptions.length <= 0) return [];
+
+    if (amountToInvest <= minimumAmountPerOption) {
+        distributedInvestmentOptions[0].amounttoinvest = amountToInvest;
+        return distributedInvestmentOptions;
+    }
+
+    let numberOfSlices = Math.ceil(amountToInvest / minimumAmountPerOption);
+    let amountLetfover = amountToInvest;
+    let numberOfOptions = distributedInvestmentOptions.length;
+
+    for (let i=0; i<numberOfSlices; i++) {
+        let amount = 0.0;
+        if (amountLetfover >= minimumAmountPerOption) {
+            amount = minimumAmountPerOption;
+        } else {
+            amount = amountLetfover;
+        }
+        distributedInvestmentOptions[i % numberOfOptions].amounttoinvest += amount;
+        amountLetfover -= amount;
+    }
+
+    return distributedInvestmentOptions;
+  }
+
+  adjustDistribution(optionId, amountToInvest, investmentParameters) {
     // find the option by optionId
     // change the amount to invest
     // the other amounts also change
     // return a new list
   }
+
 };
 
+const Investment = () => {
+    let amountToInvest = 1000.5;
+    let distributedInvestementOptions = new InvestmentTool().distribute(
+        amountToInvest,
+        investmentOptions,
+        investmentParameters,
+        1
+    );
+
+    return (
+        <Grid container>
+        <Typography variant="h1" component="h2">
+        Investment
+        </Typography>
+        <br/>
+        Amount: {amountToInvest}
+        <br/>
+        <ol>
+            {distributedInvestementOptions.map(
+                (item) => <li> {item.id} - {item.name} - {item.risk}, {item.return} - {item.amounttoinvest} </li>
+            )}
+        </ol>
+      </Grid>
+    );
+  };
+  
 export { 
     Investment, 
+    investmentParameters,
     investmentOptions,
     InvestmentTool 
 }

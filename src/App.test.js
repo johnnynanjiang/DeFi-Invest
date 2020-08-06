@@ -10,13 +10,23 @@ test('renders learn react link', () => {
   expect(linkElement).toBeInTheDocument();
 });
 
-test('InvestmentTool', () => {
-  console.log('Investment: ', Investment);
-  console.log('investmentOptions: ', investmentOptions);
-  console.log('InvestmentTool: ', InvestmentTool);
+test('InvestmentTool - sort by risk', () => {
+  const sortedInvestmentOptions = new InvestmentTool().sortByRisk(investmentOptions);
 
-  const investmentTool = new InvestmentTool();
-  const sortedInvestmentOptions = investmentTool.sortByRisk(investmentOptions);
-
+  /*
   console.log('sortedInvestmentOptions: ', sortedInvestmentOptions);
+  console.log('investmentOptions: ', investmentOptions);
+  */
+
+  expect(sortedInvestmentOptions === investmentOptions).toBe(false);
+});
+
+test('InvestmentTool - get options below risk', () => {
+  const investmentOptionsBelowRisk = new InvestmentTool().getInvestmentOptionsBelowRisk(
+    investmentOptions, 1
+  );
+
+  console.log('investmentOptionsBelowRisk: ', investmentOptionsBelowRisk);
+
+  expect(investmentOptionsBelowRisk.length == 4).toBe(true);
 });
