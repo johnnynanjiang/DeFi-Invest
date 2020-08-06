@@ -178,7 +178,7 @@ const investmentOptions = [
 
 class InvestmentTool {
   
-  sortByRisk(investmentOptions) {
+  sortByRiskDescend(investmentOptions) {
     return investmentOptions.slice(0).sort((option1, option2) => {
         if (option1.risk < option2.risk) return -1;
         if (option1.risk > option2.risk) return 1;
@@ -188,17 +188,22 @@ class InvestmentTool {
   }
 
   getInvestmentOptionsBelowRisk(investmentOptions, risk) {
-    return investmentOptions.filter((option) => {
-        return (option.risk <= risk)
-    })
+    return this.sortByRiskDescend(
+        investmentOptions.filter((option) => {
+            return (option.risk <= risk)
+        })
+    );
   }
 
+  // TODO by JJ: more accurate float number calculations in order to avoid 123.456xxx
   distribute(amountToInvest, investmentOptions, investmentParameters, risk) {
-    let investmentOptionsBelowRisk = this.getInvestmentOptionsBelowRisk(investmentOptions, risk);
-    let distributedInvestmentOptions = investmentOptionsBelowRisk;
+    let distributedInvestmentOptions = this.getInvestmentOptionsBelowRisk(investmentOptions, risk);
     let minimumAmountPerOption = investmentParameters.minimumAmountPerOption;
 
-    let numberOfCandidateOptions = investmentOptionsBelowRisk.length;
+    // clear up amount to invest for all
+    distributedInvestmentOptions.map((option) => { option.amounttoinvest = 0.0 })
+
+    let numberOfCandidateOptions = distributedInvestmentOptions.length;
     if (numberOfCandidateOptions.length <= 0) return [];
 
     if (amountToInvest <= minimumAmountPerOption) {
@@ -233,31 +238,77 @@ class InvestmentTool {
 
 };
 
-const Investment = () => {
-    let amountToInvest = 1000.5;
-    let distributedInvestementOptions = new InvestmentTool().distribute(
-        amountToInvest,
-        investmentOptions,
-        investmentParameters,
-        1
-    );
+class Investment extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            amountToInvest: 1000.5,
+            risk: 1
+        };
+        
+        this.onInputAmountChange = this.onInputAmountChange.bind(this);
+        this.onInputRiskChange = this.onInputRiskChange.bind(this);
+    }
 
-    return (
-        <Grid container>
-        <Typography variant="h1" component="h2">
-        Investment
-        </Typography>
-        <br/>
-        Amount: {amountToInvest}
-        <br/>
-        <ol>
-            {distributedInvestementOptions.map(
-                (item) => <li> {item.id} - {item.name} - {item.risk}, {item.return} - {item.amounttoinvest} </li>
-            )}
-        </ol>
-      </Grid>
-    );
-  };
+    onInputAmountChange(event) {
+        this.setState({
+            amountToInvest: event.target.value
+        });
+    }
+
+    onInputRiskChange(event) {
+        this.setState({
+            risk: event.target.value
+        });
+    }
+
+    render() {
+        let amountToInvest = this.state.amountToInvest;
+        let risk = this.state.risk;
+
+        let distributedInvestementOptions = new InvestmentTool().distribute(
+            amountToInvest,
+            investmentOptions,
+            investmentParameters,
+            risk
+        );
+
+        return (
+            <Grid container>
+            <Typography variant="h1" component="h2">
+            Investment
+            </Typography>
+            <br/>
+            <label>
+                Amount: <input 
+                            type="text" 
+                            name="inputAmountToInvest" 
+                            value={this.state.amountToInvest}
+                            onChange={this.onInputAmountChange} />
+                <br/>
+                Risk: <input 
+                        type="text" 
+                        name="inputRisk" 
+                        value={this.state.risk}
+                        onChange={this.onInputRiskChange} />
+                <br/>
+                Minimun amount per option: {investmentParameters.minimumAmountPerOption}
+            </label>
+            <br/>
+            <ul>
+                {distributedInvestementOptions.map(
+                    (item) => <li> 
+                        {item.id}&nbsp;&nbsp;&nbsp;&nbsp;
+                        {item.name}&nbsp;&nbsp;&nbsp;&nbsp; 
+                        {item.risk},&nbsp;&nbsp;{item.return}&nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="text" name="inputAmountToInvest{item.id}" value={item.amounttoinvest} /> 
+                    </li>
+                )}
+            </ul>
+        </Grid>
+        );
+    }
+};
   
 export { 
     Investment, 
