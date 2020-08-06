@@ -2,7 +2,9 @@ import React from "react";
 import { Grid, Typography } from "@material-ui/core";
 
 const investmentParameters = {
-    "minimumAmountPerOption": 100.00
+    "defaultAmountToInvest": 900.00,
+    "defaultRisk": 1,
+    "defaultMinimumAmountPerOption": 100.00
 };
 
 const investmentOptions = [
@@ -196,9 +198,8 @@ class InvestmentTool {
   }
 
   // TODO by JJ: more accurate float number calculations in order to avoid 123.456xxx
-  distribute(amountToInvest, investmentOptions, investmentParameters, risk) {
+  distribute(amountToInvest, investmentOptions, minimumAmountPerOption, risk) {
     let distributedInvestmentOptions = this.getInvestmentOptionsBelowRisk(investmentOptions, risk);
-    let minimumAmountPerOption = investmentParameters.minimumAmountPerOption;
 
     // clear up amount to invest for all
     distributedInvestmentOptions.map((option) => { option.amounttoinvest = 0.0 })
@@ -229,7 +230,7 @@ class InvestmentTool {
     return distributedInvestmentOptions;
   }
 
-  adjustDistribution(optionId, amountToInvest, investmentParameters) {
+  adjustDistribution(optionId, amountToInvest, minimumAmountPerOption) {
     // find the option by optionId
     // change the amount to invest
     // the other amounts also change
@@ -242,34 +243,55 @@ class Investment extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            amountToInvest: 1000.5,
-            risk: 1
+            amountToInvest: investmentParameters.defaultAmountToInvest,
+            risk: investmentParameters.defaultRisk,
+            minimumAmountPerOption: investmentParameters.defaultMinimumAmountPerOption
         };
         
         this.onInputAmountChange = this.onInputAmountChange.bind(this);
         this.onInputRiskChange = this.onInputRiskChange.bind(this);
+        this.onInputMinimumAmountPerOptionChange = this.onInputMinimumAmountPerOptionChange.bind(this);
+    }
+
+    isInputValidNumber(event) {
+        let number = Number(event.target.value);
+        if (isNaN(number)) return false;
+        return true;
     }
 
     onInputAmountChange(event) {
-        this.setState({
-            amountToInvest: event.target.value
-        });
+        if (this.isInputValidNumber(event)) {
+            this.setState({
+                amountToInvest: Number(event.target.value)
+            });    
+        }
     }
 
     onInputRiskChange(event) {
-        this.setState({
-            risk: event.target.value
-        });
+        if (this.isInputValidNumber(event)) {
+            this.setState({
+                risk: Number(event.target.value)
+            });    
+        }
+    }
+
+    onInputMinimumAmountPerOptionChange(event) {
+        if (this.isInputValidNumber(event)) {
+            this.setState({
+                minimumAmountPerOption: Number(event.target.value)
+            });    
+        }
     }
 
     render() {
         let amountToInvest = this.state.amountToInvest;
         let risk = this.state.risk;
+        let minimumAmountPerOption = this.state.minimumAmountPerOption;
 
         let distributedInvestementOptions = new InvestmentTool().distribute(
             amountToInvest,
             investmentOptions,
-            investmentParameters,
+            minimumAmountPerOption,
             risk
         );
 
@@ -292,7 +314,11 @@ class Investment extends React.Component {
                         value={this.state.risk}
                         onChange={this.onInputRiskChange} />
                 <br/>
-                Minimun amount per option: {investmentParameters.minimumAmountPerOption}
+                Minimun amount per option: <input 
+                        type="text" 
+                        name="inputMinimumAmountPerOption" 
+                        value={this.state.minimumAmountPerOption}
+                        onChange={this.onInputMinimumAmountPerOptionChange} />
             </label>
             <br/>
             <ul>

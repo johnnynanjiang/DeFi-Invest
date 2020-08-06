@@ -11,7 +11,7 @@ test('renders learn react link', () => {
 });
 
 test('InvestmentTool - sort by risk', () => {
-  const sortedInvestmentOptions = new InvestmentTool().sortByRisk(investmentOptions);
+  const sortedInvestmentOptions = new InvestmentTool().sortByRiskDescend(investmentOptions);
 
   /*
   console.log('sortedInvestmentOptions: ', sortedInvestmentOptions);
