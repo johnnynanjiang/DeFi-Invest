@@ -2,9 +2,9 @@ import React from "react";
 import { Grid, Typography } from "@material-ui/core";
 
 const investmentParameters = {
-    "defaultAmountToInvest": 900.00,
+    "defaultAmountToInvest": 10.00,
     "defaultRisk": 1,
-    "defaultMinimumAmountPerOption": 100.00
+    "defaultMinimumAmountPerOption": 2.00
 };
 
 const investmentOptions = [
@@ -198,7 +198,7 @@ class InvestmentTool {
   }
 
   // TODO by JJ: more accurate float number calculations in order to avoid 123.456xxx
-  distribute(amountToInvest, investmentOptions, minimumAmountPerOption, risk) {
+  distribute(amountToInvest, risk, investmentOptions, minimumAmountPerOption) {
     let distributedInvestmentOptions = this.getInvestmentOptionsBelowRisk(investmentOptions, risk);
 
     // clear up amount to invest for all
@@ -245,12 +245,14 @@ class Investment extends React.Component {
         this.state = {
             amountToInvest: investmentParameters.defaultAmountToInvest,
             risk: investmentParameters.defaultRisk,
-            minimumAmountPerOption: investmentParameters.defaultMinimumAmountPerOption
+            minimumAmountPerOption: investmentParameters.defaultMinimumAmountPerOption,
+            distributedInvestementOptions: []
         };
         
         this.onInputAmountChange = this.onInputAmountChange.bind(this);
         this.onInputRiskChange = this.onInputRiskChange.bind(this);
         this.onInputMinimumAmountPerOptionChange = this.onInputMinimumAmountPerOptionChange.bind(this);
+        this.onInputAmountForOptionChange = this.onInputAmountForOptionChange.bind(this);
     }
 
     isInputValidNumber(event) {
@@ -260,41 +262,106 @@ class Investment extends React.Component {
     }
 
     onInputAmountChange(event) {
-        if (this.isInputValidNumber(event)) {
-            this.setState({
-                amountToInvest: Number(event.target.value)
-            });    
-        }
+        if (this.isInputValidNumber(event)) {   
+            this.distribute(
+                Number(event.target.value),
+                this.state.risk,
+                this.state.minimumAmountPerOption
+            );
+        }     
     }
 
     onInputRiskChange(event) {
         if (this.isInputValidNumber(event)) {
-            this.setState({
-                risk: Number(event.target.value)
-            });    
+            this.distribute(
+                this.state.amountToInvest,
+                Number(event.target.value),
+                this.state.minimumAmountPerOption
+            );    
         }
     }
 
     onInputMinimumAmountPerOptionChange(event) {
-        if (this.isInputValidNumber(event)) {
-            this.setState({
-                minimumAmountPerOption: Number(event.target.value)
-            });    
+        if (this.isInputValidNumber(event)) { 
+            this.distribute(
+                this.state.amountToInvest,
+                this.state.risk,
+                Number(event.target.value)
+            );  
         }
     }
 
-    render() {
-        let amountToInvest = this.state.amountToInvest;
-        let risk = this.state.risk;
-        let minimumAmountPerOption = this.state.minimumAmountPerOption;
+    /* 
+        TODO by JJ: need to handle an edge case where the user changes option 1 as follows:
+        ```
+        amountToInvest: 10, minimumAmountPerOption: 100
+        option 1: 10
+        option 2: 0
+        option 3: 0
+        ```
+    */
+    onInputAmountForOptionChange(event) {
+        if (this.isInputValidNumber(event)) { 
+            let investmentOptionId = event.target.name;
+            let newAmount = event.target.value;
 
+            let amountToInvest = this.state.amountToInvest;
+            let amountOffset = amountToInvest - newAmount;
+
+            if (amountOffset < 0) return;
+
+            let theOption = this.state.distributedInvestementOptions.filter((option) => {
+                return `${option.id}` === investmentOptionId
+            });
+            let oldAmount = theOption[0].amounttoinvest;
+
+            let numberOfNonZeroOptions = this.state.distributedInvestementOptions.filter((option) => {
+                return option.amounttoinvest > 0
+            }).length - (oldAmount === 0 ? 0 : 1);
+
+            let amountOffsetForOtherOptions = (newAmount - oldAmount) / numberOfNonZeroOptions;
+
+            this.state.distributedInvestementOptions.map((option) => {
+                if (`${option.id}` === investmentOptionId) {
+                    option.amounttoinvest = newAmount;
+                } else {
+                    if (option.amounttoinvest > 0) {
+                        option.amounttoinvest -= amountOffsetForOtherOptions;
+                    }
+                }
+            })
+    
+           this.setState({
+                distributedInvestementOptions: this.state.distributedInvestementOptions
+            });            
+        }
+    }
+
+    distribute(amountToInvest, risk, minimumAmountPerOption) {
         let distributedInvestementOptions = new InvestmentTool().distribute(
             amountToInvest,
+            risk,
             investmentOptions,
-            minimumAmountPerOption,
-            risk
+            minimumAmountPerOption
         );
 
+        this.setState({
+            amountToInvest: amountToInvest,
+            risk: risk,
+            minimumAmountPerOption: minimumAmountPerOption,
+            distributedInvestementOptions: distributedInvestementOptions
+        });
+    }
+
+    componentDidMount() {
+        this.distribute(
+            this.state.amountToInvest,
+            this.state.risk,
+            this.state.minimumAmountPerOption,
+        );
+    }
+
+    render() {
         return (
             <Grid container>
             <Typography variant="h1" component="h2">
@@ -322,12 +389,16 @@ class Investment extends React.Component {
             </label>
             <br/>
             <ul>
-                {distributedInvestementOptions.map(
+                {this.state.distributedInvestementOptions.map(
                     (item) => <li> 
                         {item.id}&nbsp;&nbsp;&nbsp;&nbsp;
                         {item.name}&nbsp;&nbsp;&nbsp;&nbsp; 
                         {item.risk},&nbsp;&nbsp;{item.return}&nbsp;&nbsp;&nbsp;&nbsp;
-                        <input type="text" name="inputAmountToInvest{item.id}" value={item.amounttoinvest} /> 
+                        <input 
+                            type="text" 
+                            name={item.id} 
+                            value={item.amounttoinvest} 
+                            onChange={this.onInputAmountForOptionChange} /> 
                     </li>
                 )}
             </ul>
